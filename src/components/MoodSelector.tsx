@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { moodOptions } from '../data/moods';
 import { MoodType } from '../types';
 import { TrendingUp } from 'lucide-react';
+import ChatWithAI from './ChatWithAI';
 
 interface MoodSelectorProps {
   currentMood: MoodType | null;
@@ -14,6 +15,15 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({
   onMoodSelect, 
   onViewHistory 
 }) => {
+  const [aiMood, setAiMood] = useState<MoodType | null>(null);
+
+  // Automatically select the AI-detected mood when it is set
+  useEffect(() => {
+    if (aiMood) {
+      onMoodSelect(aiMood);
+    }
+  }, [aiMood, onMoodSelect]);
+
   return (
     <div className="min-h-screen bg-[#000102] p-4">
       <div className="max-w-md mx-auto pt-8">
@@ -25,33 +35,41 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({
             Select your current mood to get personalized support
           </p>
         </div>
-
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          {moodOptions.map((mood) => (
-            <button
-              key={mood.type}
-              onClick={() => onMoodSelect(mood.type)}
-              className={`p-6 rounded-2xl border-2 transition-all duration-300 transform hover:scale-105 ${
-                currentMood === mood.type
-                  ? `border-transparent bg-gradient-to-br ${mood.color} shadow-lg`
-                  : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
-              }`}
-            >
-              <div className="text-4xl mb-2">{mood.emoji}</div>
-              <div className={`font-semibold mb-1 ${
-                currentMood === mood.type ? 'text-white' : 'text-gray-200'
-              }`}>
-                {mood.label}
-              </div>
-              <div className={`text-sm ${
-                currentMood === mood.type ? 'text-white/80' : 'text-gray-400'
-              }`}>
-                {mood.description}
-              </div>
-            </button>
-          ))}
-        </div>
-
+        {!aiMood && (
+          <ChatWithAI onFinish={mood => setAiMood(mood as MoodType)} />
+        )}
+        {aiMood && (
+          <>
+            <div className="text-center mb-4 text-lg text-cyan-400 font-semibold">
+              AI detected your mood as: <span className="capitalize">{aiMood}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              {moodOptions.map((mood) => (
+                <button
+                  key={mood.type}
+                  onClick={() => onMoodSelect(mood.type)}
+                  className={`p-6 rounded-2xl border-2 transition-all duration-300 transform hover:scale-105 ${
+                    (currentMood === mood.type || aiMood === mood.type)
+                      ? `border-transparent bg-gradient-to-br ${mood.color} shadow-lg`
+                      : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
+                  }`}
+                >
+                  <div className="text-4xl mb-2">{mood.emoji}</div>
+                  <div className={`font-semibold mb-1 ${
+                    (currentMood === mood.type || aiMood === mood.type) ? 'text-white' : 'text-gray-200'
+                  }`}>
+                    {mood.label}
+                  </div>
+                  <div className={`text-sm ${
+                    (currentMood === mood.type || aiMood === mood.type) ? 'text-white/80' : 'text-gray-400'
+                  }`}>
+                    {mood.description}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
         <button
           onClick={onViewHistory}
           className="w-full bg-gray-800/50 border border-gray-700 text-gray-200 py-3 px-4 rounded-xl font-medium hover:bg-gray-700/50 transition-all duration-300 flex items-center justify-center space-x-2"
